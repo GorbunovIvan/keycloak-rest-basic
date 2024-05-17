@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.model.Book;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +26,12 @@ public class BookService {
 
     private String bookServiceFullUrl;
 
+    private final KeycloakForBookService keycloakForBookService;
+
     private final RestClient restClient;
 
-    public BookService() {
+    public BookService(KeycloakForBookService keycloakForBookService) {
+        this.keycloakForBookService = keycloakForBookService;
         this.restClient = RestClient.builder().build();
     }
 
@@ -40,6 +44,7 @@ public class BookService {
 
         ResponseEntity<List<Book>> response = restClient.get()
                 .uri(bookServiceFullUrl)
+                .headers(this::addSecurityInfoToHttpHeaders)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, resp) -> log.error("{}. {}", resp, resp.getStatusText()))
                 .toEntity(new ParameterizedTypeReference<>() {});
@@ -56,6 +61,7 @@ public class BookService {
 
         ResponseEntity<Book> response = restClient.get()
                 .uri(bookServiceFullUrl + "/{id}", id)
+                .headers(this::addSecurityInfoToHttpHeaders)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, resp) -> log.error("{}. {}", resp, resp.getStatusText()))
                 .toEntity(new ParameterizedTypeReference<>() {});
@@ -72,6 +78,7 @@ public class BookService {
 
         ResponseEntity<Book> response = restClient.post()
                 .uri(bookServiceFullUrl)
+                .headers(this::addSecurityInfoToHttpHeaders)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(book)
                 .retrieve()
@@ -89,7 +96,12 @@ public class BookService {
     public void delete(Integer id) {
         restClient.delete()
                 .uri(bookServiceFullUrl + "/{id}", id)
+                .headers(this::addSecurityInfoToHttpHeaders)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, resp) -> log.error("{}. {}", resp, resp.getStatusText()));
+    }
+
+    public void addSecurityInfoToHttpHeaders(HttpHeaders httpHeaders) {
+        keycloakForBookService.addSecurityInfoToHttpHeaders(httpHeaders);
     }
 }
