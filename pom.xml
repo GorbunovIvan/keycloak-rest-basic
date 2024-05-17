@@ -19,6 +19,7 @@
 
     <modules>
         <module>book-service</module>
+        <module>client-service</module>
     </modules>
 
     <properties>
