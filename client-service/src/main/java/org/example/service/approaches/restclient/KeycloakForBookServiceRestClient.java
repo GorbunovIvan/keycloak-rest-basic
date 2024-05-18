@@ -1,4 +1,4 @@
-package org.example.service;
+package org.example.service.approaches.restclient;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +16,7 @@ import java.util.Objects;
 
 @Service
 @Slf4j
-public class KeycloakForBookService {
+public class KeycloakForBookServiceRestClient {
 
     @Value("${book-service.url}")
     private String bookServiceURL;
@@ -34,15 +34,15 @@ public class KeycloakForBookService {
 
     private String accessToken = "";
 
-    public KeycloakForBookService() {
+    public KeycloakForBookServiceRestClient() {
         this.restClient = RestClient.builder().build();
     }
 
     public void updateAccessToken() {
-        this.accessToken = getAccessToken();
+        this.accessToken = getNewAccessToken();
     }
 
-    private String getAccessToken() {
+    private String getNewAccessToken() {
 
         var url = getURLForRetrievingAccessToken();
         var params = getUserCredentialsAsMap();
@@ -76,6 +76,8 @@ public class KeycloakForBookService {
             return;
         }
 
+        log.info("Checking access-token expiration for user '{}'", bookServiceUsername);
+
         if (accessToken.isEmpty()) {
             updateAccessToken();
             return;
@@ -93,7 +95,7 @@ public class KeycloakForBookService {
                 .toEntity(String.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            log.error("Failed to get check validity of access-token, response - {}\n{}", response.getStatusCode(), response.getBody());
+            log.error("Failed to check validity of access-token, response - {}\n{}", response.getStatusCode(), response.getBody());
             return;
         }
 
